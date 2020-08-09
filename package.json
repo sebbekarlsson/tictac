@@ -1,0 +1,21 @@
+{
+  "name": "tictac",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app/app.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/requirejs": "^2.1.32",
+    "requirejs": "^2.3.6",
+    "typescript": "^4.1.0-dev.20200808"
+  },
+  "devDependencies": {
+    "ts-loader": "^8.0.2",
+    "webpack": "^4.44.1",
+    "webpack-cli": "^3.3.12"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "compileOnSave": true,
+  "compilerOptions": {
+    "outDir": "dist",
+    "target": "ES5",
+    "module": "amd",
+    "removeComments": true,
+    "preserveConstEnums": true,
+    "sourceRoot": "./app",
+    "rootDir": "./app",
+    "lib": ["es6", "dom"],
+    "sourceMap": true
+  },
+  "files":[
+    "./app/app.ts"
+  ],
+  "types": ["requirejs" ],
+  "exclude": [
+    "node_modules"
+  ]
+}
