@@ -7,8 +7,7 @@ export enum ECellState {
 }
 
 export type TCellState = { state: ECellState, isWinner: boolean };
-export type TPlayerState = ECellState.P1 | ECellState.P2;
-export type TWinnerResult = { player: TPlayerState, cells: TCellState[] };
+export type TPlayerState = ECellState.P1 | ECellState.P2; export type TWinnerResult = { player: TPlayerState, cells: TCellState[] };
 
 const newCell = (): TCellState => ({ state: ECellState.zero, isWinner: false });
 
@@ -43,6 +42,7 @@ export class Grid {
     }
 
     columnToText = (state: TCellState): string | null =>
+        // ({ [ECellState.zero]: null, [ECellState.P1]: 'X', [ECellState.P2]: 'O' })[state.state]
         state.state === ECellState.zero ? null : state.state === ECellState.P1 ? 'X' : state.state === ECellState.P2 ? 'O': null;
 
     drawText(x: number, y: number, text: string | null | undefined) {
@@ -60,6 +60,7 @@ export class Grid {
             for (let pI = 0; pI < PLAYERS.length; pI++) {
                 const player = PLAYERS[pI];
 
+		// row.every
                 const rowMembers = row.filter(col => col.state === player);
 
                 if (rowMembers.length === this.cells.length) {
@@ -94,6 +95,7 @@ export class Grid {
     }
     
     nextPlayer()  {
+	// this.playerIndex = ++this.playerIndex % PLAYERS.length;
         this.playerIndex = this.playerIndex < (PLAYERS.length - 1) ? this.playerIndex + 1 : 0;
         this.currentPlayer = PLAYERS[this.playerIndex]; 
     }
