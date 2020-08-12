@@ -1,36 +1,38 @@
 import { Canvas, mkCanvas } from './canvas';
-import { GridState, mkGridState, gridDraw, gridUpdate } from './grid';
-import { EPlayer, TCellState, TPlayerState, GameState } from './types';
-import { AppState } from './appTypes';
-import { mkGameState, setGameState } from './gameState';
-import { handleAppActions, getActionHandler } from './actions';
+import { AppState } from './types';
+import { getActionHandler } from './actionHandler';
+import { TActionHandler, ActionHandler, TickFunction, DrawFunction } from './types';
 
 const ACTION_HANDLER = getActionHandler();
 
-export const mkApp = (canvas: Canvas): AppState => {
-    const gameState = mkGameState();
+export const mkApp = <T>(
+    actionHandler: ActionHandler,
+    canvas: Canvas,
+    tick: TickFunction,
+    draw: DrawFunction,
+    gameStateMaker: (canvas: Canvas) => any,
+): AppState<T> => {
+    const gameState = gameStateMaker(canvas);
 
     return {
         canvas: canvas,
-        grid: mkGridState(canvas, gameState),
         lastTime: (new Date()).getTime(),
         currentTime: 0,
         fps: 0,
         gameState: gameState,
+        actionHandler: actionHandler,
+        tick: tick,
+        draw: draw,
+        gameStateMaker: gameStateMaker,
     }
 }
 
-const appTick = (app: AppState) => {
-    gridUpdate(app.grid);
-    gridDraw(app.grid);
-}
-
-export const startApp = (app: AppState) => {
+export const startApp = (app: AppState<any>, postAction: (app: AppState<any>, newState: any) => any) => {
     const listenForActions = () => {
         ACTION_HANDLER.actions.forEach((action) => {
-            const newGameState = handleAppActions(app.gameState, action);
+            const newGameState = app.actionHandler(app.canvas, app.gameState, action);
             app.gameState = newGameState;
-            app.grid = mkGridState(app.canvas, setGameState(newGameState));
+            postAction(app, newGameState);
             ACTION_HANDLER.actions = ACTION_HANDLER.actions.filter((existingAct) => existingAct !== action) || [];
         });
     }
@@ -42,7 +44,9 @@ export const startApp = (app: AppState) => {
         app.canvas.ctx.clearRect(0, 0, app.canvas.element.width, app.canvas.element.height);
 
         listenForActions();
-        appTick(app);
+
+        app.tick(app);
+        app.draw(app);
     }
 
     updateApp();

@@ -1,30 +1,27 @@
-import { AppState } from './appTypes';
-import { TAction, GameState } from './types';
+import { GameState } from './types';
+import { TAction, TActionHandler, ActionHandler } from 'engine/types';
 import { mkGameState } from './gameState';
+import { EActionType } from './actionTypes';
+import { Canvas } from 'engine/canvas';
 
-export const mkActionHandler = () => ({actions: []});
 
-export let ACTION_HANDLER = mkActionHandler();
-
-export const getActionHandler = () => {
-    if (ACTION_HANDLER) {
-        return ACTION_HANDLER;
-    } else {
-        ACTION_HANDLER = mkActionHandler();
-    }
-
-    return ACTION_HANDLER;
-}
-
-export const handleAppActions = (gameState: GameState, action: TAction): GameState => {
+export const handleAppActions:ActionHandler =(canvas: Canvas, gameState: GameState, action: TAction): GameState => {
    switch (action.type) {
-       case 'GAMESTATE_SET_WINNING_CELLS':
+       case EActionType.GAMESTATE_SET_WINNING_CELLS:
           return {
               ...gameState,
               winningCells: action.data || [],
           }
-       case 'GAMESTATE_RESET':
-          return mkGameState() 
+       case EActionType.GAMESTATE_NEXT_PLAYER:
+          const playerIndex = gameState.playerIndex < (gameState.availablePlayers.length - 1) ? gameState.playerIndex + 1 : 0;
+          const turn = gameState.availablePlayers[playerIndex];
+          return {
+              ...gameState,
+              playerIndex: playerIndex,
+              turn: turn
+          }
+       case EActionType.GAMESTATE_RESET:
+          return mkGameState(canvas) 
        default:
            return gameState;
    } 

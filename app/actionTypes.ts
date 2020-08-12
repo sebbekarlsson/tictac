@@ -1,0 +1,5 @@
+export enum EActionType {
+    GAMESTATE_SET_WINNING_CELLS,
+    GAMESTATE_NEXT_PLAYER,
+    GAMESTATE_RESET,
+}

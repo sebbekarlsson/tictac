@@ -1,3 +1,6 @@
+import { EActionType } from './actionTypes';
+import { GridState } from './grid';
+
 export enum EPlayer { X, O };
 export type TCellState = EPlayer | null;
 
@@ -11,8 +14,8 @@ export type GameState = {
     board: BoardState,
     winLock: boolean,
     winningCells: TCellState[],
+    gridState: GridState | null,
+    availablePlayers: TPlayerState[]
 };
 
 export type Rect = { width: number, height: number };
-
-export type TAction = { type: string, data?: any }

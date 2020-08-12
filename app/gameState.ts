@@ -1,10 +1,12 @@
+import { GridState, mkGridState } from './grid';
+import { Canvas } from './engine/canvas';
+
 import { TCellState, TPlayerState, GameState, EPlayer } from './types';
 
 const newCell = (): TCellState => null;
 
-export const PLAYERS: TPlayerState[] = [EPlayer.X, EPlayer.O];
-
-export const mkGameState = (): GameState => ({
+const _mkGameState = (): GameState => ({
+    gridState: null,
     playerIndex: 0,
     turn: EPlayer.X,
     board: [
@@ -14,13 +16,10 @@ export const mkGameState = (): GameState => ({
     ],
     winLock: false,
     winningCells: [],
+    availablePlayers: [EPlayer.X, EPlayer.O]
 });
 
-export const nextPlayer = (gameState: GameState) => {
-    gameState.playerIndex = gameState.playerIndex < (PLAYERS.length - 1) ? gameState.playerIndex + 1 : 0;
-    gameState.turn = PLAYERS[gameState.playerIndex]; 
+export const mkGameState = (canvas: Canvas): GameState => {
+    const state = _mkGameState();
+    return { ...state, gridState: mkGridState(canvas, state) };
 }
-
-export let GAME_STATE = mkGameState();
-
-export const setGameState = (newGameState: GameState) => { GAME_STATE = newGameState; return GAME_STATE; };

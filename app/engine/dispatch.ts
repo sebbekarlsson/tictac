@@ -1,6 +1,5 @@
-import { AppState } from './appTypes';
 import { TAction } from './types';
-import { getActionHandler } from './actions';
+import { getActionHandler } from './actionHandler';
 
 const ACTION_HANDLER = getActionHandler();
 

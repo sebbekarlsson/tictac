@@ -1,7 +1,7 @@
-import { Canvas } from './canvas';
+import { Canvas } from 'engine/canvas';
 import { TCellState, TPlayerState, EPlayer, TWinnerResult, Rect, GameState } from './types';
-import { PLAYERS, nextPlayer } from './gameState';
-import { dispatch } from './dispatch';
+import { dispatch } from 'engine/dispatch';
+import { EActionType } from './actionTypes';
 
 const getCellSize = (canvas: Canvas):Rect => ({ width: canvas.element.width / 3, height: canvas.element.height / 3 })
 
@@ -26,8 +26,8 @@ export const getWinnerVertical = (gameState: GameState):TWinnerResult | null => 
     for (let xI = 0; xI < gameState.board.length; xI++) {
         const row = gameState.board[xI];
 
-        for (let pI = 0; pI < PLAYERS.length; pI++) {
-            const player = PLAYERS[pI];
+        for (let pI = 0; pI < gameState.availablePlayers.length; pI++) {
+            const player = gameState.availablePlayers[pI];
 
             const rowMembers = row.filter(col => col === player);
 
@@ -44,7 +44,7 @@ const getWinnerHorizontal = (gameState: GameState):TWinnerResult | null => {
     for (let yI = 0; yI < gameState.board.length; yI++) {
         const horizontalRow: TCellState[] = gameState.board.map((row, xI) => gameState.board[xI][yI]);
 
-        const winner = PLAYERS.map((player) => ({
+        const winner = gameState.availablePlayers.map((player) => ({
             player, rowMembers: horizontalRow.filter(col => col === player)
         })).find(item => item.rowMembers.length === gameState.board.length);
 
@@ -72,7 +72,7 @@ export const onClick = (event, gridState: GridState) => {
 
                 if ((mx > x && mx < x + cellW) && (my > y && my < y + cellH)) {
                     gridState.gameState.board[xI][yI] = gridState.gameState.turn;
-                    nextPlayer(gridState.gameState);
+                    dispatch({ type: EActionType.GAMESTATE_NEXT_PLAYER })
                 }
             }
         });
@@ -80,12 +80,11 @@ export const onClick = (event, gridState: GridState) => {
 }
 
 export const onWin = (result: TWinnerResult) => {
-    dispatch({ type: 'GAMESTATE_SET_WINNING_CELLS', data: result.cells || [] });
+    dispatch({ type: EActionType.GAMESTATE_SET_WINNING_CELLS, data: result.cells || [] });
 
     alert(`The winner is: ${result.player}`);
-    setTimeout((() => {
-        dispatch({ type: 'GAMESTATE_RESET' })
-    }).bind(this), 3000); 
+
+    setTimeout((() => dispatch({ type: EActionType.GAMESTATE_RESET })).bind(this), 3000); 
 }
 
 export const gridUpdate = (gridState: GridState) => {
