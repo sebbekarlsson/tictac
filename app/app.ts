@@ -1,59 +1,51 @@
-import { Canvas } from './canvas';
-import { Grid } from './grid';
+import { Canvas, mkCanvas } from './canvas';
+import { GridState, mkGridState, gridDraw, gridUpdate } from './grid';
+import { EPlayer, TCellState, TPlayerState, GameState } from './types';
+import { mkGameState } from './gameState';
 
+type AppState = {
+    canvas: Canvas,
+    grid: GridState,
+    lastTime: number,
+    currentTime: number,
+    fps: number
+    gameState: GameState,
+};
 
-class App {
-    canvas: Canvas;
-    grid: Grid;
-    cw: number;
-    ch: number;
-    cx: any;
-    fps: number;
-    lastTime: number;
-    currentTime: number;
-    delta: number;
-    ballX: number;
-    mX: number;
+const mkApp = (canvas: Canvas): AppState => {
+    const gameState = mkGameState();
 
-    constructor() {
-        this.canvas = new Canvas('canvas');
-        this.grid = new Grid(this.canvas);
-
-        this.cw = this.canvas.width,
-        this.ch = this.canvas.height,
-        this.cx = this.canvas.context;
-        this.fps = 30,
-        this.lastTime = (new Date()).getTime(),
-        this.currentTime = 0,
-        this.delta = 0;
-        this.ballX = 128;
-        this.mX = 150;
-    }
-
-    tick() {
-        this.canvas.tick();
-        this.grid.tick();
-    }
-
-    draw() {
-        this.canvas.draw();
-        this.grid.draw(); 
-    }
-
-    loop() {
-        window.requestAnimationFrame(this.loop.bind(this));
-        const currentTime = (new Date()).getTime();
-        const delta = (currentTime - this.lastTime) / 1000;
-        this.cx.clearRect(0, 0, this.cw, this.cw);
-
-        this.tick();
-        this.draw();
-    }
-
-    start() {
-        this.loop(); 
+    return {
+        canvas: canvas,
+        grid: mkGridState(gameState, canvas),
+        lastTime: (new Date()).getTime(),
+        currentTime: 0,
+        fps: 0,
+        gameState: gameState
     }
 }
 
-const app = new App();
-app.start();
+const appTick = (app: AppState) => {
+    gridUpdate(app.grid);
+    gridDraw(app.grid);
+}
+
+const startApp = (app: AppState) => {
+    const updateApp = () => {
+        window.requestAnimationFrame(updateApp);
+        const currentTime = (new Date()).getTime();
+        const delta = (currentTime - app.lastTime) / 1000;
+        app.canvas.ctx.clearRect(0, 0, app.canvas.element.width, app.canvas.element.height);
+
+        appTick(app);
+    }
+
+    updateApp();
+};
+
+// exposed user API, it is okay if we have a dependency to the document here.
+// The code below would not be included in a distributed version of this
+// application.
+const canvas = mkCanvas(document.getElementById('canvas') as HTMLCanvasElement)
+const APP = mkApp(canvas);
+startApp(APP);

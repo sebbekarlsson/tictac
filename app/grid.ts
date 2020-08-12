@@ -1,174 +1,135 @@
 import { Canvas } from './canvas';
+import { TCellState, TPlayerState, EPlayer, TWinnerResult, Rect, GameState } from './types';
+import { PLAYERS, nextPlayer } from './gameState';
 
-export enum ECellState {
-    'zero' = 0,
-    'P1' = 1,
-    'P2' = 2
+const getCellSize = (canvas: Canvas):Rect => ({ width: canvas.element.width / 3, height: canvas.element.height / 3 })
+
+export type GridState = {
+    canvas: Canvas,
+    gameState: GameState
+    cellSize: Rect,
+};
+
+export const columnToText = (state: TCellState): string | null =>
+        state === null ? null : state === EPlayer.X ? 'X' : state === EPlayer.O ? 'O': null;
+
+export const drawText = (canvas: Canvas, x: number, y: number, text: string | null | undefined) => {
+    const context = canvas.ctx;
+    context.save();
+    context.font = "30px Arial";
+    text && context.fillText(text, x, y);
+    context.restore();
 }
 
-export type TCellState = { state: ECellState, isWinner: boolean };
-export type TPlayerState = ECellState.P1 | ECellState.P2;
-export type TWinnerResult = { player: TPlayerState, cells: TCellState[] };
+export const getWinnerVertical = (gameState: GameState):TWinnerResult | null => {
+    for (let xI = 0; xI < gameState.board.length; xI++) {
+        const row = gameState.board[xI];
 
-const newCell = (): TCellState => ({ state: ECellState.zero, isWinner: false });
+        for (let pI = 0; pI < PLAYERS.length; pI++) {
+            const player = PLAYERS[pI];
 
-const PLAYERS: TPlayerState[] = [ECellState.P1, ECellState.P2];
+            const rowMembers = row.filter(col => col === player);
 
-export class Grid {
-    canvas: Canvas;
-    playerIndex: number;
-    currentPlayer: TPlayerState;
-    cells: TCellState[][];
-    cellWidth: number;
-    cellHeight: number;
-    winLock: boolean;
-
-    setState() {
-        this.playerIndex = 0;
-        this.currentPlayer = PLAYERS[this.playerIndex];
-        this.cells = [
-            [newCell(), newCell(), newCell()],
-            [newCell(), newCell(), newCell()],
-            [newCell(), newCell(), newCell()],
-        ];
-        this.winLock = false;
-    }
-
-    constructor(canvas: Canvas) {
-        this.canvas = canvas;
-        this.canvas.element.onclick = this.onClick.bind(this);
-        this.cellWidth = this.canvas.width / 3;
-        this.cellHeight = this.canvas.height / 3;
-        this.setState();
-    }
-
-    columnToText = (state: TCellState): string | null =>
-        state.state === ECellState.zero ? null : state.state === ECellState.P1 ? 'X' : state.state === ECellState.P2 ? 'O': null;
-
-    drawText(x: number, y: number, text: string | null | undefined) {
-        const context = this.canvas.context;
-        context.save();
-        context.font = "30px Arial";
-        text && context.fillText(text, x, y);
-        context.restore();
-    }
-
-    getWinnerVertical = ():TWinnerResult | null => {
-        for (let xI = 0; xI < this.cells.length; xI++) {
-            const row = this.cells[xI];
-
-            for (let pI = 0; pI < PLAYERS.length; pI++) {
-                const player = PLAYERS[pI];
-
-                const rowMembers = row.filter(col => col.state === player);
-
-                if (rowMembers.length === this.cells.length) {
-                    return { player, cells: row};
-                }
+            if (rowMembers.length === gameState.board.length) {
+                return { player, cells: row};
             }
-        };
-
-        return null;
-    }
-
-    getWinnerHorizontal = ():TWinnerResult | null => {
-        for (let yI = 0; yI < this.cells.length; yI++) {
-            const horizontalRow: TCellState[] = this.cells.map((row, xI) => this.cells[xI][yI]);
-
-            const winner = PLAYERS.map((player) => ({
-                player, rowMembers: horizontalRow.filter(col => col.state === player)
-            })).find(item => item.rowMembers.length === this.cells.length);
-
-            if (winner)
-                return { player: winner.player, cells: horizontalRow};
-        };
-
-        return null;
-    }
-
-    getWinner = ():TWinnerResult | null => {
-        const winnerHorizontal = this.getWinnerHorizontal();
-        const winnerVertical = this.getWinnerVertical();
-
-        return winnerHorizontal || winnerVertical;
-    }
-    
-    nextPlayer()  {
-        this.playerIndex = this.playerIndex < (PLAYERS.length - 1) ? this.playerIndex + 1 : 0;
-        this.currentPlayer = PLAYERS[this.playerIndex]; 
-    }
-
-    onClick(event) {
-        const mx = event.clientX;
-        const my = event.clientY;
-
-        this.cells.forEach((row, xI) => {
-            row.forEach((col, yI) => {
-                if (col.state === ECellState.zero) {
-                    const cellW = this.cellWidth;
-                    const cellH = this.cellHeight;
-                    const x = xI * cellW;
-                    const y = yI * cellH;
-
-                    if ((mx > x && mx < x + cellW) && (my > y && my < y + cellH)) {
-                        this.cells[xI][yI].state = this.currentPlayer;
-                        this.nextPlayer();
-                    }
-                }
-            });
-        });
-    }
-
-    setWinnerCells(cells: TCellState[]) {
-        for (let i = 0; i < cells.length; i++)
-            cells[i].isWinner = true; 
-    }
-    
-    onWin(result: TWinnerResult) {
-        this.setWinnerCells(result.cells);
-        alert(`The winner is: ${result.player}`);
-        setTimeout((() => {
-            this.setState();  
-        }).bind(this), 3000); 
-    }
-
-    tick() {
-        const winner = this.getWinner();
-        
-        if (winner && !this.winLock) {
-            this.winLock = true;
-            this.onWin(winner);
         }
-    }
+    };
 
-    draw() {
-        this.cells.forEach((row, xI) => {
-            row.forEach((col, yI) => {
-                const cellW = this.cellWidth;
-                const cellH = this.cellHeight;
+    return null;
+}
+
+const getWinnerHorizontal = (gameState: GameState):TWinnerResult | null => {
+    for (let yI = 0; yI < gameState.board.length; yI++) {
+        const horizontalRow: TCellState[] = gameState.board.map((row, xI) => gameState.board[xI][yI]);
+
+        const winner = PLAYERS.map((player) => ({
+            player, rowMembers: horizontalRow.filter(col => col === player)
+        })).find(item => item.rowMembers.length === gameState.board.length);
+
+        if (winner)
+            return { player: winner.player, cells: horizontalRow};
+    };
+
+    return null;
+}
+
+export const getWinner = (gameState: GameState):TWinnerResult | null =>
+    getWinnerHorizontal(gameState) || getWinnerVertical(gameState);
+
+export const onClick = (event, gridState: GridState) => {
+    const mx = event.clientX;
+    const my = event.clientY;
+
+    gridState.gameState.board.forEach((row, xI) => {
+        row.forEach((col, yI) => {
+            if (col === null) {
+                const cellW = gridState.cellSize.width;
+                const cellH = gridState.cellSize.height;
                 const x = xI * cellW;
                 const y = yI * cellH;
 
-                const context = this.canvas.context;
-
-                if (col.isWinner) {
-                    context.save();
-                    context.beginPath();
-                    context.fillStyle = "red";
-                    context.fillRect(x, y, this.cellWidth, this.cellHeight); 
-                    context.fillStyle = "transparent";
-                    context.restore();
-                } else {
-                    context.save();
-                    context.beginPath();
-                    context.strokeStyle = "black";
-                    context.strokeRect(x, y, this.cellWidth, this.cellHeight);
-                    context.strokeStyle = "transparent";
-                    context.restore();
+                if ((mx > x && mx < x + cellW) && (my > y && my < y + cellH)) {
+                    gridState.gameState.board[xI][yI] = gridState.gameState.turn;
+                    nextPlayer(gridState.gameState);
                 }
-
-                this.drawText(x + (cellW / 2) - (30 / 2), y + (cellH / 2), this.columnToText(col));
-            });
-        })
-    }
+            }
+        });
+    });
 }
+
+export const onWin = (result: TWinnerResult) => {
+    alert(`The winner is: ${result.player}`);
+    setTimeout((() => {
+        // TODO: fix this
+        //this.setState();  
+    }).bind(this), 3000); 
+}
+
+export const gridUpdate = (gridState: GridState) => {
+    const winner = getWinner(gridState.gameState);
+    
+    if (winner && !gridState.gameState.winLock) {
+        gridState.gameState.winLock = true;
+        onWin(winner);
+    }
+};
+
+export const gridDraw = (gridState: GridState) => {
+    gridState.gameState.board.forEach((row, xI) => {
+        row.forEach((col, yI) => {
+            const cellW = gridState.cellSize.width;
+            const cellH = gridState.cellSize.height;
+            const x = xI * cellW;
+            const y = yI * cellH;
+
+            const context = gridState.canvas.ctx;
+
+            if (false) {
+                context.save();
+                context.beginPath();
+                context.fillStyle = "red";
+                context.fillRect(x, y, gridState.cellSize.width, gridState.cellSize.height); 
+                context.fillStyle = "transparent";
+                context.restore();
+            } else {
+                context.save();
+                context.beginPath();
+                context.strokeStyle = "black";
+                context.strokeRect(x, y, gridState.cellSize.width, gridState.cellSize.height);
+                context.strokeStyle = "transparent";
+                context.restore();
+            }
+
+            drawText(gridState.canvas, x + (cellW / 2) - (30 / 2), y + (cellH / 2), columnToText(col));
+        });
+    })
+};
+
+export const initGridState = (gridState: GridState): GridState => {
+    gridState.canvas.element.onclick = (event) => onClick(event, gridState);
+    return gridState;
+};
+
+export const mkGridState = (gameState: GameState, canvas: Canvas):GridState =>
+    initGridState({ canvas, gameState, cellSize: getCellSize(canvas) });

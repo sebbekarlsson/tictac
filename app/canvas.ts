@@ -1,23 +1,5 @@
-export class Canvas {
-    element: HTMLCanvasElement;
-    elementId: string;
-    width: number;
-    height: number;
-    context: any;
+export type Canvas =
+	{ element: HTMLCanvasElement, ctx: CanvasRenderingContext2D };
 
-    constructor(elementId: string) {
-        this.elementId = elementId;
-        this.element = document.getElementById(elementId) as HTMLCanvasElement;
-        this.width = this.element.width;
-        this.height = this.element.height;
-        this.context = this.element.getContext('2d');
-    }
-
-    tick() {
-    
-    }
-
-    draw() {
-    
-    }
-}
+export const mkCanvas = (element: HTMLCanvasElement): Canvas =>
+    ({ element, ctx: element.getContext('2d') });
