@@ -1,13 +1,14 @@
 import { Canvas } from './canvas';
 import { TCellState, TPlayerState, EPlayer, TWinnerResult, Rect, GameState } from './types';
 import { PLAYERS, nextPlayer } from './gameState';
+import { dispatch } from './dispatch';
 
 const getCellSize = (canvas: Canvas):Rect => ({ width: canvas.element.width / 3, height: canvas.element.height / 3 })
 
 export type GridState = {
     canvas: Canvas,
-    gameState: GameState
     cellSize: Rect,
+    gameState: GameState
 };
 
 export const columnToText = (state: TCellState): string | null =>
@@ -31,7 +32,7 @@ export const getWinnerVertical = (gameState: GameState):TWinnerResult | null => 
             const rowMembers = row.filter(col => col === player);
 
             if (rowMembers.length === gameState.board.length) {
-                return { player, cells: row};
+                return { player, cells: row };
             }
         }
     };
@@ -48,7 +49,7 @@ const getWinnerHorizontal = (gameState: GameState):TWinnerResult | null => {
         })).find(item => item.rowMembers.length === gameState.board.length);
 
         if (winner)
-            return { player: winner.player, cells: horizontalRow};
+            return { player: winner.player, cells: horizontalRow };
     };
 
     return null;
@@ -79,10 +80,11 @@ export const onClick = (event, gridState: GridState) => {
 }
 
 export const onWin = (result: TWinnerResult) => {
+    dispatch({ type: 'GAMESTATE_SET_WINNING_CELLS', data: result.cells || [] });
+
     alert(`The winner is: ${result.player}`);
     setTimeout((() => {
-        // TODO: fix this
-        //this.setState();  
+        dispatch({ type: 'GAMESTATE_RESET' })
     }).bind(this), 3000); 
 }
 
@@ -105,7 +107,7 @@ export const gridDraw = (gridState: GridState) => {
 
             const context = gridState.canvas.ctx;
 
-            if (false) {
+            if (gridState.gameState.winningCells.includes(col)) {
                 context.save();
                 context.beginPath();
                 context.fillStyle = "red";
@@ -131,5 +133,5 @@ export const initGridState = (gridState: GridState): GridState => {
     return gridState;
 };
 
-export const mkGridState = (gameState: GameState, canvas: Canvas):GridState =>
-    initGridState({ canvas, gameState, cellSize: getCellSize(canvas) });
+export const mkGridState = (canvas: Canvas, gameState: GameState):GridState =>
+    initGridState({ canvas, cellSize: getCellSize(canvas), gameState});

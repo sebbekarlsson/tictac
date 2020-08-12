@@ -8,11 +8,11 @@
     "preserveConstEnums": true,
     "sourceRoot": "./app",
     "rootDir": "./app",
-    "lib": ["es6", "dom"],
+    "lib": ["es2016", "dom"],
     "sourceMap": true
   },
   "files":[
-    "./app/app.ts"
+    "./app/main.ts"
   ],
   "types": ["requirejs" ],
   "exclude": [

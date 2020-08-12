@@ -13,9 +13,14 @@ export const mkGameState = (): GameState => ({
         [newCell(), newCell(), newCell()]
     ],
     winLock: false,
+    winningCells: [],
 });
 
 export const nextPlayer = (gameState: GameState) => {
     gameState.playerIndex = gameState.playerIndex < (PLAYERS.length - 1) ? gameState.playerIndex + 1 : 0;
     gameState.turn = PLAYERS[gameState.playerIndex]; 
 }
+
+export let GAME_STATE = mkGameState();
+
+export const setGameState = (newGameState: GameState) => { GAME_STATE = newGameState; return GAME_STATE; };

@@ -1,27 +1,22 @@
 import { Canvas, mkCanvas } from './canvas';
 import { GridState, mkGridState, gridDraw, gridUpdate } from './grid';
 import { EPlayer, TCellState, TPlayerState, GameState } from './types';
-import { mkGameState } from './gameState';
+import { AppState } from './appTypes';
+import { mkGameState, setGameState } from './gameState';
+import { handleAppActions, getActionHandler } from './actions';
 
-type AppState = {
-    canvas: Canvas,
-    grid: GridState,
-    lastTime: number,
-    currentTime: number,
-    fps: number
-    gameState: GameState,
-};
+const ACTION_HANDLER = getActionHandler();
 
-const mkApp = (canvas: Canvas): AppState => {
+export const mkApp = (canvas: Canvas): AppState => {
     const gameState = mkGameState();
 
     return {
         canvas: canvas,
-        grid: mkGridState(gameState, canvas),
+        grid: mkGridState(canvas, gameState),
         lastTime: (new Date()).getTime(),
         currentTime: 0,
         fps: 0,
-        gameState: gameState
+        gameState: gameState,
     }
 }
 
@@ -30,22 +25,25 @@ const appTick = (app: AppState) => {
     gridDraw(app.grid);
 }
 
-const startApp = (app: AppState) => {
+export const startApp = (app: AppState) => {
+    const listenForActions = () => {
+        ACTION_HANDLER.actions.forEach((action) => {
+            const newGameState = handleAppActions(app.gameState, action);
+            app.gameState = newGameState;
+            app.grid = mkGridState(app.canvas, setGameState(newGameState));
+            ACTION_HANDLER.actions = ACTION_HANDLER.actions.filter((existingAct) => existingAct !== action) || [];
+        });
+    }
+
     const updateApp = () => {
         window.requestAnimationFrame(updateApp);
         const currentTime = (new Date()).getTime();
         const delta = (currentTime - app.lastTime) / 1000;
         app.canvas.ctx.clearRect(0, 0, app.canvas.element.width, app.canvas.element.height);
 
+        listenForActions();
         appTick(app);
     }
 
     updateApp();
 };
-
-// exposed user API, it is okay if we have a dependency to the document here.
-// The code below would not be included in a distributed version of this
-// application.
-const canvas = mkCanvas(document.getElementById('canvas') as HTMLCanvasElement)
-const APP = mkApp(canvas);
-startApp(APP);
