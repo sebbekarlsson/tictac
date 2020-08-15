@@ -15,7 +15,7 @@ export type GameState = {
     winLock: boolean,
     winningCells: TCellState[],
     gridState: GridState | null,
-    availablePlayers: TPlayerState[]
+    availablePlayers: TPlayerState[],
 };
 
 export type Rect = { width: number, height: number };

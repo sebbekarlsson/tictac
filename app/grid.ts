@@ -8,7 +8,6 @@ const getCellSize = (canvas: Canvas):Rect => ({ width: canvas.element.width / 3,
 export type GridState = {
     canvas: Canvas,
     cellSize: Rect,
-    gameState: GameState
 };
 
 export const columnToText = (state: TCellState): string | null =>
@@ -26,16 +25,13 @@ export const getWinnerVertical = (gameState: GameState):TWinnerResult | null => 
     for (let xI = 0; xI < gameState.board.length; xI++) {
         const row = gameState.board[xI];
 
-        for (let pI = 0; pI < gameState.availablePlayers.length; pI++) {
-            const player = gameState.availablePlayers[pI];
+        const winner = gameState.availablePlayers.map((player) => ({
+            player, rowMembers: row.filter(col => col === player)
+        })).find(item => item.rowMembers.length === gameState.board.length);
 
-            const rowMembers = row.filter(col => col === player);
-
-            if (rowMembers.length === gameState.board.length) {
-                return { player, cells: row };
-            }
-        }
-    };
+        if (winner)
+            return { player: winner.player, cells: row };
+    }
 
     return null;
 }
@@ -50,19 +46,52 @@ const getWinnerHorizontal = (gameState: GameState):TWinnerResult | null => {
 
         if (winner)
             return { player: winner.player, cells: horizontalRow };
-    };
+    }
 
     return null;
 }
 
+const getWinnerDiag = (gameState: GameState):TWinnerResult | null => {
+    return ([
+        /**
+        * x = y 
+        *
+        * [X][ ][ ]
+        * [ ][X][ ]
+        * [ ][ ][X]
+        */
+        gameState.board.map((record: TCellState[], yI: number) =>
+                            // x
+            record[Math.min(yI, gameState.board.length - 1)]),
+
+        /**
+        * x = (numberOfCells - y)
+        *
+        * [ ][ ][X]
+        * [ ][X][ ]
+        * [X][ ][ ]
+        */
+        gameState.board.map((record: TCellState[], yI: number) =>
+                            // x
+            record[Math.min((gameState.board.length - 1) - yI, gameState.board.length - 1)]),
+        
+    ]).map(aCase => gameState.availablePlayers.map((player) => ({
+        player: player,
+        cells: aCase.filter(col => col === player)
+    })).find(item => item.cells.length === gameState.board.length)).find(winner => !!winner) || null;
+}
+
 export const getWinner = (gameState: GameState):TWinnerResult | null =>
-    getWinnerHorizontal(gameState) || getWinnerVertical(gameState);
+    getWinnerHorizontal(gameState) || getWinnerVertical(gameState) || getWinnerDiag(gameState);
 
-export const onClick = (event, gridState: GridState) => {
-    const mx = event.clientX;
-    const my = event.clientY;
+export const onClick = (event, gridState: GridState, gameState: GameState) => {
+    const canvasX = event.target.offsetLeft;
+    const canvasY = event.target.offsetTop;
+    
+    const mx = event.clientX + canvasX;
+    const my = event.clientY + canvasY;
 
-    gridState.gameState.board.forEach((row, xI) => {
+    gameState.board.forEach((row, xI) => {
         row.forEach((col, yI) => {
             if (col === null) {
                 const cellW = gridState.cellSize.width;
@@ -71,7 +100,7 @@ export const onClick = (event, gridState: GridState) => {
                 const y = yI * cellH;
 
                 if ((mx > x && mx < x + cellW) && (my > y && my < y + cellH)) {
-                    gridState.gameState.board[xI][yI] = gridState.gameState.turn;
+                    gameState.board[xI][yI] = gameState.turn;
                     dispatch({ type: EActionType.GAMESTATE_NEXT_PLAYER })
                 }
             }
@@ -87,17 +116,19 @@ export const onWin = (result: TWinnerResult) => {
     setTimeout((() => dispatch({ type: EActionType.GAMESTATE_RESET })).bind(this), 3000); 
 }
 
-export const gridUpdate = (gridState: GridState) => {
-    const winner = getWinner(gridState.gameState);
+export const gridUpdate = (gameState: GameState) => {
+    const winner = getWinner(gameState);
     
-    if (winner && !gridState.gameState.winLock) {
-        gridState.gameState.winLock = true;
+    if (winner && !gameState.winLock) {
+        gameState.winLock = true;
         onWin(winner);
     }
 };
 
-export const gridDraw = (gridState: GridState) => {
-    gridState.gameState.board.forEach((row, xI) => {
+export const gridDraw = (gameState: GameState) => {
+    const gridState = gameState.gridState;
+
+    gameState.board.forEach((row, xI) => {
         row.forEach((col, yI) => {
             const cellW = gridState.cellSize.width;
             const cellH = gridState.cellSize.height;
@@ -106,7 +137,7 @@ export const gridDraw = (gridState: GridState) => {
 
             const context = gridState.canvas.ctx;
 
-            if (gridState.gameState.winningCells.includes(col)) {
+            if (gameState.winningCells.includes(col)) {
                 context.save();
                 context.beginPath();
                 context.fillStyle = "red";
@@ -127,10 +158,10 @@ export const gridDraw = (gridState: GridState) => {
     })
 };
 
-export const initGridState = (gridState: GridState): GridState => {
-    gridState.canvas.element.onclick = (event) => onClick(event, gridState);
+export const initGridState = (gridState: GridState, gameState: GameState): GridState => {
+    gridState.canvas.element.onclick = (event) => onClick(event, gridState, gameState);
     return gridState;
 };
 
 export const mkGridState = (canvas: Canvas, gameState: GameState):GridState =>
-    initGridState({ canvas, cellSize: getCellSize(canvas), gameState});
+    initGridState({ canvas, cellSize: getCellSize(canvas)}, gameState);

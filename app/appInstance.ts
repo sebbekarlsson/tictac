@@ -16,11 +16,11 @@ export const APP = mkApp<GameState>(
     canvas,
     (app) => {
         // @ts-ignore
-        gridDraw(app.gameState.gridState); 
+        gridDraw(app.gameState); 
     },
     (app)  => {
         // @ts-ignore
-        gridUpdate(app.gameState.gridState); 
+        gridUpdate(app.gameState); 
     },
     mkGameState,
 );

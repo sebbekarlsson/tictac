@@ -28,13 +28,15 @@ export const mkApp = <T>(
 }
 
 export const startApp = (app: AppState<any>, postAction: (app: AppState<any>, newState: any) => any) => {
-    const listenForActions = () => {
+    const listenForActions = (): AppState<any> => {
         ACTION_HANDLER.actions.forEach((action) => {
             const newGameState = app.actionHandler(app.canvas, app.gameState, action);
             app.gameState = newGameState;
             postAction(app, newGameState);
             ACTION_HANDLER.actions = ACTION_HANDLER.actions.filter((existingAct) => existingAct !== action) || [];
         });
+
+        return app;
     }
 
     const updateApp = () => {
@@ -43,10 +45,10 @@ export const startApp = (app: AppState<any>, postAction: (app: AppState<any>, ne
         const delta = (currentTime - app.lastTime) / 1000;
         app.canvas.ctx.clearRect(0, 0, app.canvas.element.width, app.canvas.element.height);
 
-        listenForActions();
+        const newState: AppState<any> = listenForActions();
 
-        app.tick(app);
-        app.draw(app);
+        newState.tick(newState);
+        newState.draw(newState);
     }
 
     updateApp();
