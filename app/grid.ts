@@ -88,8 +88,8 @@ export const onClick = (event, gridState: GridState, gameState: GameState) => {
     const canvasX = event.target.offsetLeft;
     const canvasY = event.target.offsetTop;
     
-    const mx = event.clientX + canvasX;
-    const my = event.clientY + canvasY;
+    const mx = event.clientX - canvasX;
+    const my = event.clientY - canvasY;
 
     gameState.board.forEach((row, xI) => {
         row.forEach((col, yI) => {
